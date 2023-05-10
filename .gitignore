@@ -1,6 +1,6 @@
 
-.json
-gitignore
-/developer
+*.json
+# gitignore
+# /developer/*/.json
 
 ##newlines
