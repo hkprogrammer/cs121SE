@@ -15,7 +15,10 @@ def extract_text_from_json_files(root_dir):
         html_content = data['content']
         soup = BeautifulSoup(html_content, 'html.parser')
         text = soup.get_text()
+        html_url = data["url"] # added by Hitoki 5/11/2023
         output_filename = os.path.splitext(json_path)[0] + '.txt'
+        # output_filename = html_url[8:-1] + '.txt'
+        
         with open(output_filename, 'w') as f:
             f.write(text)
         # print(text)
