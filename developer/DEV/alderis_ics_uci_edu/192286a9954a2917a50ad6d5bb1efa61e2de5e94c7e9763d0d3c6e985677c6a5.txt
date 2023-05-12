@@ -45,7 +45,7 @@ Technical Report
 Gabor Madl, Nikil Dutt: Tutorial for the Open-Source DREAM Tool, Performance comparison with the Uppaal model checker and the Verimag IF toolset, Draft v1.1, CECS technical report, 2006. Bibtex.
 Gabor Madl, Sherif Abdelwahed: Formal Verification of Distributed Preemptive Real-time Scheduling, ISIS Technical Report, 2005. Bibtex.
 Poster
-Gabor Madl, Nikil Dutt, Sherif Abdelwahed: Distributed Real-time Embedded Analysis Method - DREAM ™, Poster, Emsoft 2005.
+Gabor Madl, Nikil Dutt, Sherif Abdelwahed: Distributed Real-time Embedded Analysis Method - DREAM â„¢, Poster, Emsoft 2005.
 Gabor Madl, Tivadar Szemethy, Sherif Abdelwahed, Gabor Karsai, Janos Sztipanovits: Embedded System Verification via Platform Modeling, Model Transformations and Model Checking, Poster, ITR review, UC Berkeley, November, 2004.
 Other papers in submission...
 
@@ -55,7 +55,7 @@ Other papers in submission...
 
 
 						
-								© All the material published on this website is copyrighted. All rights reserved. 
+								Â© All the material published on this website is copyrighted. All rights reserved. 
 
 
 

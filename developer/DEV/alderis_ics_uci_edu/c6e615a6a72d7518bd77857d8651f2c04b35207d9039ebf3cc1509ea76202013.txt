@@ -80,7 +80,7 @@ A key property of the Alderis language is that it has formally defined semantics
 
 
 						
-								© All the material published on this website is copyrighted. All rights reserved. 
+								Â© All the material published on this website is copyrighted. All rights reserved. 
 
 
 

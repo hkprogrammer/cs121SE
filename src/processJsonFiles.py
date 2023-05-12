@@ -1,7 +1,7 @@
 from collections import defaultdict
 from glob import glob
 from os.path import *
-from tokenizer import tokenize
+from src.tokenizer import tokenize
 
 
 class ProcessJson:
@@ -127,6 +127,7 @@ class ProcessJson:
 
         # close the file for writing
         write_obj.close()
+
 
 
 def record_json_freq_invert(custom_dir: str) -> None:

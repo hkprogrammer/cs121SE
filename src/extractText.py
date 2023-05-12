@@ -2,6 +2,8 @@ import os
 import json
 from bs4 import BeautifulSoup
 
+#TODO, implemenet read in zip.
+
 def extract_text_from_json_files(root_dir):
     print(root_dir)
     file_list = []

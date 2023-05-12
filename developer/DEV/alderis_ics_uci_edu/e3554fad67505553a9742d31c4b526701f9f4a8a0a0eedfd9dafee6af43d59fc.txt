@@ -22,7 +22,7 @@ Home
 
 
 Feedback
-We need your feedback to further develop the analysis and verification methods. If you find our tools useful or if you have comments / questions regarding the Alderis/DREAM ™ framework please contact me at gabe at uci dot edu.
+We need your feedback to further develop the analysis and verification methods. If you find our tools useful or if you have comments / questions regarding the Alderis/DREAM â„¢ framework please contact me at gabe at uci dot edu.
 
 DREAM
 ACES
@@ -41,7 +41,7 @@ To download the recently open-sourced Generic Modeling Environment (GME) please 
 
 
 						
-								© All the material published on this website is copyrighted. All rights reserved. 
+								Â© All the material published on this website is copyrighted. All rights reserved. 
 
 
 
