@@ -2,5 +2,5 @@
 # *.json
 # gitignore
 /developer/DEV_original/*
-
+/developer/DEV/*
 ##newlines

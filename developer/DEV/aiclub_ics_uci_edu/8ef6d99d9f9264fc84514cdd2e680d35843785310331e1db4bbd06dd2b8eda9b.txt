@@ -112,9 +112,9 @@ Contact
 
 
 We’re AI@UCI.
-Artificial Intelligence at the University of California, Irvine (AI@UCI) is a 
-						nonprofit student-run organization that focuses on promoting and cultivating the 
-						discipline of artificial intelligence and machine learning and its applications 
+Artificial Intelligence at the University of California, Irvine (AI@UCI) is a 
+						nonprofit student-run organization that focuses on promoting and cultivating the 
+						discipline of artificial intelligence and machine learning and its applications 
 						among the UCI community.
 
 
@@ -963,13 +963,13 @@ Email: aiatuci@gmail.com
 
 
 
-
-						Thank you. The Mailman is on His Way :)
+
+						Thank you. The Mailman is on His Way :)
+					
+
+						Sorry, don't know what happened. Try later :(
 					
 
-						Sorry, don't know what happened. Try later :(
-					
-
 
 
 
@@ -1011,7 +1011,7 @@ Email: aiatuci@gmail.com
 
 
 
-Design And Developed by Michael Wang and Themefisher.com. Copyright
+Design And Developed by Michael Wang and Themefisher.com. Copyright
 						©  Artificial Intelligence @ UCI. All Rights Reserved.
 
 
