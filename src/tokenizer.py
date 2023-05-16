@@ -10,7 +10,7 @@ def tokenize(input_str: str) -> list:
     
     #removes punctuation.
     for i in nltkTokenize:
-        if any([char in ",.!?[]{}#$^&*()\\|;:<>=+" for char in i]):
+        if any([char in ",.!@©/?[]{}#$^&*()\\|;:<>=+" for char in i]):
             continue
         result.append(i)
     return result

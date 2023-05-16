@@ -27,8 +27,12 @@ class ProcessJson:
                 continue
             # print(json_hash)
             if "_freqs" not in json_hash:
-                self.process_file_words(json_hash)
-                self.invert_index(json_hash)
+                try:
+                    self.process_file_words(json_hash)
+                    self.invert_index(json_hash)
+                except Exception as ex:
+                    print("exception hapepened during parsing: ", ex)
+                    print("file: ",json_hash)
 
     def process_file_words(self, url_filename: str) -> None:
         # verify that the filename is a valid text file
@@ -176,7 +180,7 @@ class ProcessJson:
         
         #reverse DocIDs:
         
-        f = open(f"{self.save_dir}/id_map.txt","w",encoding="utf-8")
+        f = open(f"{self.save_dir}/  .txt","w",encoding="utf-8")
         appearedID = set()
         # print(self.doc_id)
         print("===============Writing DocID Map File=================")
@@ -191,6 +195,7 @@ class ProcessJson:
             
             
 def record_json_freq_invert(custom_dir: str) -> None:
+    
     pj = ProcessJson()
     pj.go_through_files(custom_dir)
     pj.process_all_freqs()
