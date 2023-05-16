@@ -65,6 +65,9 @@ class ProcessJson:
 
         # close the file for writing
         write_obj.close()
+        
+        
+        
     def invert_index(self, json_filename):
         # Checks if file is a .txt file
         if not isfile(json_filename) or '.txt' not in json_filename:
@@ -87,6 +90,9 @@ class ProcessJson:
                 if(json_name not in self.all_json_inverts[word]):
                     self.all_json_inverts[word].append(json_name)    
         read_obj.close()
+        
+        
+
     def process_all_inverts(self) -> None:
         # opens a write all_inverted_index.txt
         try:
