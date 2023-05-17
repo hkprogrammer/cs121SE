@@ -11,15 +11,24 @@ class Query:
     
     
     def makeQuery(self)->list[tuple["url",int]]:
+        """the makeQuery function makes a query using self.query and returns the search result along with it
+
+        Returns:
+            list of urls: a list containing the url and the tf-idf score of that word in that particular url.  
+        """
+        
+        
         wordMapping,docMapping = self.readFile(self.query) # wordMapping: {word: [[docID,freq],...]}, docMapping: {docID: url}
         pureDocIDs = dict() # pureDocIDs: {word: [docID,docID,docID,...]}
         for i in wordMapping:
             pureDocIDs[i] = [j[0] for j in wordMapping[i]]
-        
-        # print(pureDocIDs)
-        # print(wordMapping[:10],docMapping[:10],pureDocIDs[:10])
+
+
         queries = self.stringToBooleans(self.query)
         listOfDocID = self.recursiveCheck(queries,pureDocIDs)
+        
+        
+        # filters through the doc only if the checkquery is true, else then skip that doc.
         docList = []
         for i in listOfDocID:      
             
@@ -28,7 +37,7 @@ class Query:
                 docList.append((docMapping[i],result[1]))
         
         
-        
+        #go through each path and finds its corresponding url. If the function throws an error, then it will skip that particular url.
         urlList = [] 
         for i in docList:
             tup = (self.pathToUrl(i[0]),i[1])       
@@ -41,20 +50,53 @@ class Query:
     
     
     def stringToBooleans(self,query:str) -> list[list]:
+        """stringToBoolean function takes in the string query splits it to a 2-gram finder.
+
+        Args:
+            query (str): _description_
+
+        Returns:
+            list[list]: _description_
+        """
         #TODO
         return [[]]
     
-    def recursiveCheck(self,booleanQuery:list[str],docIDs:list[int]) -> list[int]:
+    def recursiveCheck(self,booleanQuery:list[str],docIDs:dict["word": [int]]) -> list[int]:
+        """The recursiveCheck should take in the booleanQuery and compute the 1-gram, 2-gram, 3-gram and n-gram search and return a list of docIDs
+
+        Args:
+            booleanQuery (list[str]): the 2-gram boolean query
+            docIDs (list[int]): mapping of {word: [docId, docId,...],...}
+
+        Returns:
+            list[int]: list of docIDs from search.
+        """
         #TODO
-        return list(docIDs.values())[0]
+        return [] if len(docIDs) == 0 else list(docIDs.values())[0]
     
     def findIntersection(self,list1:list[int],list2:list[int]) -> list[int]:
+        """finds the intersection between list1 and list2. Try to implement a more efficeint way than just using set.intersection()
+        Perferably using pointers that locates at the front of both lists and can fast forward if needed. 
+
+        Args:
+            list1 (list[int]): list of docIDs 
+            list2 (list[int]): list of docIDs
+
+        Returns:
+            list[int]: common list of docIDs
+        """
         #TODO
         return [1]
     
-    def checkQueryInFile(self,query,targetJson) -> tuple[bool,int]:
-        """
-        check if a query exist inside a target JSON html. Return (True,tf-idf) score of the query in the targetJSON. If false return (False,-1)
+    def checkQueryInFile(self,query:str,targetJson) -> tuple[bool,int]:
+        """check if a query exist inside a target JSON html. Return (True,tf-idf) score of the query in the targetJSON. If false return (False,-1)
+
+        Args:
+            query (str): query in string
+            targetJson (_type_): target JSON file.
+
+        Returns:
+            tuple[bool,int]: _description_
         """
         #TODO
         return (True,-1)
@@ -75,9 +117,22 @@ class Query:
             return ""
 
     def readFile(self,query:str)-> dict:
+        """
+        reads through inverted index and id_map and returns a tuple of two elements
+            -> mapping of {word: [[docID,freq],...]}
+            -> mapping of {docID: jsonFile}
+        
+        This function also filters through the inverted index and only return back mapping that the word is part of the search.
+        Like let's say if searching "UC Irvine" then this will only return the tokens and its docID if the words are "UC" or "Irvine"
+        
+        input: 
+            - query (str): the query sentence/word. 
+
+        
+        """
         d = {}
         neededIDs = set()
-        queryWords = query.split(" ")
+        queryWords = tokenize(query)
         with open("developer/DEV/all_inverted_index.txt","r",encoding="utf-8") as f:
             for i in f:
                 line = i.rstrip("\n").split(" -> ")
