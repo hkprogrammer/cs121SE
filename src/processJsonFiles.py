@@ -108,7 +108,7 @@ class ProcessJson:
             tokenized_words = tokenize(line)
             for word in tokenized_words:
                 if(json_name not in self.all_json_inverts[word]):
-                    full_extention_name = json_filename[json_filename.index("DEV\\")+4:-3] + "json"
+                    full_extention_name = json_filename[json_filename.index("DEV")+4:-3] + "json"
                     if full_extention_name in self.doc_id:
                         docId = self.doc_id[full_extention_name]
                     else:
@@ -180,7 +180,7 @@ class ProcessJson:
         
         #reverse DocIDs:
         
-        f = open(f"{self.save_dir}/  .txt","w",encoding="utf-8")
+        f = open(f"{self.save_dir}/id_map.txt","w",encoding="utf-8")
         appearedID = set()
         # print(self.doc_id)
         print("===============Writing DocID Map File=================")

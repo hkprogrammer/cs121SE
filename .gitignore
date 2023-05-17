@@ -2,6 +2,6 @@
 # *.json
 # gitignore
 /developer/DEV_original/*
-/developer/DEV/*
 /archive/
+/src/__pycache__/
 ##newlines
