@@ -124,7 +124,6 @@ class ProcessJson:
                     
                     self.all_json_inverts[word].append((docId,freq))    
         read_obj.close()
-        
     def process_all_inverts(self) -> None:
         # opens a write all_inverted_index.txt
         try:
