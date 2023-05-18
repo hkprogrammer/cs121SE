@@ -1,6 +1,8 @@
 from src.tokenizer import tokenize
 import json
 import os
+from bs4 import BeautifulSoup
+import math
 # from tokenizer to
 
 
@@ -88,22 +90,50 @@ class Query:
         #TODO
         return [1]
     
-    def checkQueryInFile(self,query:str,targetJson) -> tuple[bool,int]:
+    def checkQueryInFile(self,query:str,targetJson) -> tuple[bool,float]:
         """check if a query exist inside a target JSON html. Return (True,tf-idf) score of the query in the targetJSON. If false return (False,-1)
 
         Args:
             query (str): query in string
             targetJson (_type_): target JSON file.
-
+        
         Returns:
             tuple[bool,int]: _description_
         """
-        #TODO
-        return (True,-1)
+        is_in_file = False
+        doc_count = 0
+        doc_with_word_count = 0
+        tf_idf = 0
+        json_docid = 0
+        json_name = targetJson[:-4].split("\\")[-1]
+        word_frequency = 0
+        wordMapping,docMapping = self.readFile(self.query)
+        #beautifulsoup to open json file
+        data = json.load(targetJson)
+        html_content = data['content']
+        soup = BeautifulSoup(html_content, 'html.parser')
+        text = soup.get_text()
+        #checks to see if query is in text
+        if(query in text):
+            is_in_file = True
+        #calcualte tf and idf
+        docs_with_word_count = len(wordMapping[query])
+        docs_count = len(docMapping)
+        for key, value in docMapping.items():
+            if(value == json_name):
+                docid = key
+        for docid, frequency in wordMapping[query]:
+            if(json_docid == docid):
+                word_frequency = frequency
+                break
+        
+        tf_idf = self.tfidf((word_frequency/len(text)),(docs_count/docs_with_word_count))
+        
+
+        return (is_in_file,tf_idf)
     
-    def tfidf(self,tf,idf)->int:
-        #TODO
-        return -1
+    def tfidf(self,tf,idf)->float:
+        return (1+math.log(tf))*math.log(idf)
     
     def pathToUrl(self,path) -> str:
         try:
