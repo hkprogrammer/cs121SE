@@ -51,17 +51,22 @@ class Query:
             
     
     
-    def stringToBooleans(self,query:str) -> list[list]:
-        """stringToBoolean function takes in the string query splits it to a 2-gram finder.
+    def stringToBooleans(self,query:str, n:int=2) -> list[list]:
+        """stringToBoolean function takes in the string query splits it to a (n)-gram finder.
 
         Args:
             query (str): _description_
+            n (int): _descrip
 
         Returns:
-            list[list]: _description_
+            list[list]: a list of lists each containing n words
         """
-        #TODO
-        return [[]]
+        assert n > 0, "No point in splitting string into lists with 0 words"
+        split_words = tokenize(query)
+        return_list = []
+        for start_index in range(len(split_words) - n + 1):
+            return_list.append([split_words[x] for x in range(start_index, start_index + n)])
+        return return_list
     
     def recursiveCheck(self,booleanQuery:list[str],docIDs:dict["word": [int]]) -> list[int]:
         """The recursiveCheck should take in the booleanQuery and compute the 1-gram, 2-gram, 3-gram and n-gram search and return a list of docIDs
