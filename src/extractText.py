@@ -8,31 +8,30 @@ from tqdm import tqdm
 
 #TODO, implemenet read in zip.
 
-def extract_text_from_json_files(root_dir):
+def extract_text_from_json_files(filename):
 
     file_list = []
     
-    for dirpath, dirnames, filenames in tqdm(os.walk(root_dir)):
-        for filename in filenames:
-            if filename.endswith('.json'):
-                file_list.append(os.path.join(dirpath, filename))
-    print("===============Extracting Texts=================")
-    for json_path in tqdm(file_list):
-        try:
-            with open(json_path) as f:
-                data = json.load(f)
-            html_content = data['content']
-            soup = BeautifulSoup(html_content, 'html.parser')
-            text = soup.get_text()
-            html_url = data["url"] # added by Hitoki 5/11/2023
-            output_filename = os.path.splitext(json_path)[0] + '.txt'
-            # print(output_filename)
-            normalize('NFKD', text).encode('ASCII', 'ignore')
-            # output_filename = html_url[8:-1] + '.txt'
-            with open(output_filename, 'w',encoding="utf-8") as f:
-                f.write(text)
-        except Exception as e:
-            print("Exception happened during extract: ",e )
-        # print(text)
+    # for dirpath, dirnames, filenames in tqdm(os.walk(root_dir)):
+    #     for filename in filenames:
+    #         if filename.endswith('.json'):
+    #             file_list.append(os.path.join(dirpath, filename))
+    # print("===============Extracting Texts=================")
+    # for json_path in tqdm(file_list):
+    try:
+        with open(filename) as f:
+            data = json.load(f)
+        html_content = data['content']
+        soup = BeautifulSoup(html_content, 'html.parser')
+        text = soup.get_text()
+        output_filename = os.path.splitext(filename)[0] + '.txt'
+        # print(output_filename)
+        normalize('NFKD', text).encode('ASCII', 'ignore')
+        # output_filename = html_url[8:-1] + '.txt'
+        return text
+    except Exception as e:
+        print("Exception happened during extract: ",e )
+    return ""
+    # print(text)
 
     

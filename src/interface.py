@@ -19,6 +19,7 @@ class Interface:
             self.query(user_input)
 
     def showInterface(self):
+        print("=====================================")
         print("type [q] to quit")
     
     def userInput(self) -> str:
@@ -27,7 +28,8 @@ class Interface:
     def query(self,query):
         quer = Query(query)
         result = quer.makeQuery()
-        
+
+        result = sorted(result,key=lambda x:x[1],reverse=True)        
         
         for i in result[:self.showingNumber]:
             print("Page: ", i[0], ", freq:",i[1])
