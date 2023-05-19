@@ -121,15 +121,15 @@ class Query:
         word_frequency = 0
         # wordMapping,docMapping = self.readFile(self.query)
         #beautifulsoup to open json file
-        with open(os.getcwd() + "/developer/DEV/" + json_name + "txt") as f:
-            # data = json.load(f)
+        with open(os.getcwd() + "/developer/DEV/" + json_name + "json") as f:
+            data = json.load(f)
 
-            # html_content = data['content']
-            # soup = BeautifulSoup(html_content, 'html.parser')
-            # text = soup.get_text()
-            text = []
-            for i in f:
-                text.extend(tokenize(i.rstrip("\n")))
+            html_content = data['content']
+            soup = BeautifulSoup(html_content, 'html.parser')
+            text = soup.get_text()
+            # text = []
+            # for i in f:
+            #     text.extend(tokenize(i.rstrip("\n")))
 
             #checks to see if query is in text
             if(query in text):

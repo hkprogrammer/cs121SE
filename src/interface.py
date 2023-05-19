@@ -32,5 +32,5 @@ class Interface:
         result = sorted(result,key=lambda x:x[1],reverse=True)        
         
         for i in result[:self.showingNumber]:
-            print("Page: ", i[0], ", freq:",i[1])
+            print("Page: ", i[0], ", tf-idf:",i[1])
         print(f"found on a total of {len(result)} pages, showing {min(self.showingNumber,len(result))}")
