@@ -2,6 +2,8 @@ from nltk.tokenize import word_tokenize
 
 
 def tokenize(input_str: str) -> list:
+    
+    input_str = input_str.rstrip("\n")
     nltkTokenize = word_tokenize(input_str)
     
 

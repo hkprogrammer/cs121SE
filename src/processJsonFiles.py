@@ -3,6 +3,7 @@ from glob import glob
 from os.path import *
 from src.tokenizer import tokenize
 from tqdm import tqdm
+from src.extractText import extract_text_from_json_files
 
 
 class ProcessJson:
@@ -21,59 +22,36 @@ class ProcessJson:
             self.save_dir = str(custom_dir)
 
         # iterate through all the text files in the directory to be processed
-        print("===============Parsing File=================")
-        for json_hash in tqdm(glob(pathname=f'{self.save_dir}/**/*.txt', recursive=True)):
-            if "all_file_freqs.txt" in json_hash or "all_inverted_index.txt" in json_hash or "id_map.txt" in json_hash:
-                continue
+        print("===============Extract/Parsing File=================")
+        for json_hash in tqdm(glob(pathname=f'{self.save_dir}/**/*.json', recursive=True)):
             # print(json_hash)
-            if "_freqs" not in json_hash:
-                try:
-                    self.process_file_words(json_hash)
-                    self.invert_index(json_hash)
-                except Exception as ex:
-                    print("exception hapepened during parsing: ", ex)
-                    print("file: ",json_hash)
 
-    def process_file_words(self, url_filename: str) -> None:
+           
+           
+            try:
+                text = extract_text_from_json_files(json_hash)
+                if text == "":
+                    continue
+                self.process_file_words(text,json_hash)
+                self.invert_index(text,json_hash)
+            except Exception as ex:
+                raise ex
+                print("exception hapepened during parsing: ", ex)
+                print("file: ",json_hash)
+
+    def process_file_words(self, fileText: str,url_filename:str) -> None:
         # verify that the filename is a valid text file
-        if not isfile(url_filename) or '.txt' not in url_filename:
-            print(f"Not valid file name: {url_filename}")
-            return
-
-        # open the file for reading
-        try:
-            read_obj = open(url_filename, "r",encoding="utf-8")
-        except OSError:
-            print(f"Error opening current file: {url_filename}")
-            return
-
-        # create a dicitonary to keep track of local word frequencies
         read_dict = defaultdict(int)
-
         # go through each line in the file and tokenize it
-        for line in read_obj:
-            tokenized_words = tokenize(line)
-            for word in tokenized_words:
-                # add the counts to the global and local frequencies
-                self.all_json_freqs[word] += 1
-                read_dict[word] += 1
 
-        # close the file for reading
-        read_obj.close()
-
-        # create a file for writing
-        freq_filename = f"{url_filename.rsplit('.txt', 1)[0]}_freqs.txt"
-        try:
-            # write_obj = open(freq_filename, "w",encoding="utf-8")
-            pass
-        except OSError:
-            print(f"Error opening current file: {freq_filename}")
-            return
+        tokenized_words = tokenize(fileText)
+        for word in tokenized_words:
+            # add the counts to the global and local frequencies
+            self.all_json_freqs[word] += 1
+            read_dict[word] += 1
 
         # sort the local frequencies
         sorted_items = sorted(sorted(read_dict.items(), key=lambda x: x[0]), key=lambda x: x[1], reverse=True)
-        
-        
         
         word_freq = {}
         # write each word frequency to the file
@@ -81,49 +59,36 @@ class ProcessJson:
             # write_obj.write(f'{word} -> {freq}\n')
             word_freq[word] = freq
         
-        self.doc_freqs[url_filename.rsplit('.txt', 1)[0]] = word_freq
+        self.doc_freqs[url_filename.rsplit('.json', 1)[0]] = word_freq
 
         # close the file for writing
         # write_obj.close()
         
         
         
-    def invert_index(self, json_filename):
-        # Checks if file is a .txt file
-        if not isfile(json_filename) or '.txt' not in json_filename:
-            print(f"Not valid file name: {json_filename}")
-            return
-        # Opens and read json_filename
-        try:
-            read_obj = open(json_filename, "r",encoding="utf-8")
-        except OSError:
-            print(f"Error opening current file: {json_filename}")
-            return
-        # Removes .txt from json_filename
-        json_name = json_filename[:-4].split("\\")[-1]
-        #gets json name from file path
+    def invert_index(self, file_text:str,json_name):
         
-        # Appends tokens into all_json_inverts
-        for line in read_obj:
-            tokenized_words = tokenize(line)
-            for word in tokenized_words:
-                if(json_name not in self.all_json_inverts[word]):
-                    full_extention_name = json_filename[json_filename.index("DEV")+4:-3] + "json"
-                    if full_extention_name in self.doc_id:
-                        docId = self.doc_id[full_extention_name]
-                    else:
-                       
-                        docId = self.doc_id_num
-                        self.doc_id[full_extention_name] = docId
-                        self.doc_id_num +=1
-                    # if docId in self.all_json_inverts[word]:
-                    #     continue
-                    freq = self.doc_freqs[json_filename[:-4]][word]
-                    if (docId,freq) in self.all_json_inverts[word]:
-                        continue
+        
+        
+        tokenized_words = tokenize(file_text)
+        for word in tokenized_words:
+            if(json_name not in self.all_json_inverts[word]):
+                full_extention_name = json_name[json_name.index("DEV")+4:]
+                if full_extention_name in self.doc_id:
+                    docId = self.doc_id[full_extention_name]
+                else:
                     
-                    self.all_json_inverts[word].append((docId,freq))    
-        read_obj.close()
+                    docId = self.doc_id_num
+                    self.doc_id[full_extention_name] = docId
+                    self.doc_id_num +=1
+                # if docId in self.all_json_inverts[word]:
+                #     continue
+                freq = self.doc_freqs[json_name[:-5]][word]
+                if (docId,freq) in self.all_json_inverts[word]:
+                    continue
+                
+                self.all_json_inverts[word].append((docId,freq))    
+        
     def process_all_inverts(self) -> None:
         # opens a write all_inverted_index.txt
         try:
@@ -191,6 +156,12 @@ class ProcessJson:
             appearedID.add(id)
             f.write(f"{id} -> {path}\n")
         f.close()
+    
+    def writeNumDocs(self):
+        print("===============Writing Inverted Index Count File=================")
+        f = open(f"{self.save_dir}/inverted_index_count.txt","w",encoding="utf-8")
+        f.write(str(len(self.all_json_inverts)))
+        f.close()
             
             
 def record_json_freq_invert(custom_dir: str) -> None:
@@ -200,5 +171,6 @@ def record_json_freq_invert(custom_dir: str) -> None:
     pj.process_all_freqs()
     pj.process_all_inverts()
     pj.writeDocID()
+    pj.writeNumDocs()
 
 

@@ -10,6 +10,7 @@ import math
 class Query:
     def __init__(self,query:str)->None:
         self.query = query
+        self.threshold = 5
     
     
     def makeQuery(self)->list[tuple["url",int]]:
@@ -31,13 +32,20 @@ class Query:
         
         
         # filters through the doc only if the checkquery is true, else then skip that doc.
-        docList = []
+        docList = {}
+        pureDocs = {}
         for i in listOfDocID:      
             for j in tokenize(self.query):
                 result = self.checkQueryInFile(j,i,docMapping[i],wordMapping,docMapping)
+                if i in pureDocs and pureDocs[i] <= result[1]:
+                    continue
                 if result[0] == True:
-                    docList.append((docMapping[i],result[1]))
+                    docList[docMapping[i]] = result[1]
+                    pureDocs[i] = result[0]
+            else:
+                continue
         
+        docList = list(docList.items())
         
         #go through each path and finds its corresponding url. If the function throws an error, then it will skip that particular url.
         urlList = [] 
@@ -113,12 +121,16 @@ class Query:
         word_frequency = 0
         # wordMapping,docMapping = self.readFile(self.query)
         #beautifulsoup to open json file
-        with open(os.getcwd() + "/developer/DEV/" + json_name + "json") as f:
-            data = json.load(f)
+        with open(os.getcwd() + "/developer/DEV/" + json_name + "txt") as f:
+            # data = json.load(f)
 
-            html_content = data['content']
-            soup = BeautifulSoup(html_content, 'html.parser')
-            text = soup.get_text()
+            # html_content = data['content']
+            # soup = BeautifulSoup(html_content, 'html.parser')
+            # text = soup.get_text()
+            text = []
+            for i in f:
+                text.extend(tokenize(i.rstrip("\n")))
+
             #checks to see if query is in text
             if(query in text):
                 is_in_file = True
@@ -142,8 +154,8 @@ class Query:
                     word_frequency = v
                     break
             
-            print(docs_count,docs_with_word_count)
-            tf_idf = self.tfidf((word_frequency/len(tokenize(text))),(docs_count/(1+docs_with_word_count)))
+            
+            tf_idf = self.tfidf((word_frequency/len(text)),(docs_count/(1+docs_with_word_count)))
             
 
         return (is_in_file,tf_idf) or (False, -1)
