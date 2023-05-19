@@ -1,4 +1,4 @@
-Total words found: 813
+Total words found: 808
 the -> 163
 and -> 94
 of -> 89
@@ -12,7 +12,6 @@ Systems -> 34
 UCI -> 33
 a -> 33
 in -> 30
-- -> 29
 Embedded -> 26
 Mentor -> 24
 Distributed -> 23
@@ -20,6 +19,7 @@ Real-time -> 22
 All -> 21
 Analysis -> 21
 that -> 20
+- -> 19
 DREAM -> 19
 by -> 19
 We -> 18
@@ -39,12 +39,12 @@ be -> 14
 masters -> 14
 from -> 13
 website -> 13
-1 -> 12
 Learning -> 12
 Machine -> 12
 Madl -> 12
 language -> 12
 you -> 12
+1 -> 11
 Performance -> 11
 correct -> 11
 do -> 11
@@ -69,7 +69,6 @@ distributed -> 9
 has -> 9
 learning -> 9
 n't -> 9
-3 -> 8
 Bibtex -> 8
 Downloads -> 8
 Figure -> 8
@@ -84,6 +83,7 @@ shown -> 8
 shows -> 8
 source -> 8
 we -> 8
+3 -> 7
 ACES -> 7
 Abdelwahed -> 7
 Dutt -> 7
@@ -141,7 +141,6 @@ tiles -> 6
 timed -> 6
 used -> 6
 way -> 6
-2 -> 5
 A -> 5
 AHB -> 5
 EMSOFT -> 5
@@ -164,8 +163,7 @@ results -> 5
 space -> 5
 were -> 5
 which -> 5
-5 -> 4
-6 -> 4
+2 -> 4
 Applications -> 4
 Copyright -> 4
 Evaluation -> 4
@@ -218,6 +216,8 @@ working -> 4
 128x128 -> 3
 2005 -> 3
 25th -> 3
+5 -> 3
+6 -> 3
 64x64 -> 3
 6pm -> 3
 AMBA-based -> 3
@@ -595,14 +595,9 @@ verify -> 2
 visit -> 2
 visual -> 2
 well -> 2
-10 -> 1
 231-240 -> 1
-4 -> 1
 5-processor -> 1
 6th -> 1
-7 -> 1
-8 -> 1
-9 -> 1
 Ambiguity -> 1
 Application -> 1
 Architectures -> 1

@@ -4,8 +4,7 @@ from nltk.tokenize import word_tokenize
 def tokenize(input_str: str) -> list:
     nltkTokenize = word_tokenize(input_str)
     
-    
-    
+
     result = []
     
     #removes punctuation.
