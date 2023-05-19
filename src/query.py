@@ -49,7 +49,7 @@ class Query:
             
     
     
-    def stringToBooleans(self,query:str) -> list[list]:
+    def stringToBooleans(self,query:str,gramcount:int) -> list[list]:
         """stringToBoolean function takes in the string query splits it to a 2-gram finder.
 
         Args:
@@ -58,6 +58,8 @@ class Query:
         Returns:
             list[list]: _description_
         """
+        
+        "master of software enginenring" [["master","of"],["of","software"]]
         #TODO
         return [[]]
     
@@ -70,7 +72,9 @@ class Query:
 
         Returns:
             list[int]: list of docIDs from search.
+            
         """
+        
         #TODO
         return [] if len(docIDs) == 0 else list(docIDs.values())[0]
     
