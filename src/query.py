@@ -26,17 +26,17 @@ class Query:
             pureDocIDs[i] = [j[0] for j in wordMapping[i]]
 
 
-        queries = self.stringToBooleans(self.query)
+        queries = self.stringToBooleans(self.query,2)
         listOfDocID = self.recursiveCheck(queries,pureDocIDs)
         
         
         # filters through the doc only if the checkquery is true, else then skip that doc.
         docList = []
         for i in listOfDocID:      
-            
-            result = self.checkQueryInFile(self.query,docMapping[i])
-            if result[0] == True:
-                docList.append((docMapping[i],result[1]))
+            for j in tokenize(self.query):
+                result = self.checkQueryInFile(j,i,docMapping[i],wordMapping,docMapping)
+                if result[0] == True:
+                    docList.append((docMapping[i],result[1]))
         
         
         #go through each path and finds its corresponding url. If the function throws an error, then it will skip that particular url.
@@ -61,7 +61,7 @@ class Query:
             list[list]: _description_
         """
         
-        "master of software enginenring" [["master","of"],["of","software"]]
+
         #TODO
         return [[]]
     
@@ -94,7 +94,7 @@ class Query:
         #TODO
         return [1]
     
-    def checkQueryInFile(self,query:str,targetJson) -> tuple[bool,float]:
+    def checkQueryInFile(self,query:str,docID:int,targetJson,wordMapping,docMapping) -> tuple[bool,float]:
         """check if a query exist inside a target JSON html. Return (True,tf-idf) score of the query in the targetJSON. If false return (False,-1)
 
         Args:
@@ -111,33 +111,45 @@ class Query:
         json_docid = 0
         json_name = targetJson[:-4].split("\\")[-1]
         word_frequency = 0
-        wordMapping,docMapping = self.readFile(self.query)
+        # wordMapping,docMapping = self.readFile(self.query)
         #beautifulsoup to open json file
-        data = json.load(targetJson)
-        html_content = data['content']
-        soup = BeautifulSoup(html_content, 'html.parser')
-        text = soup.get_text()
-        #checks to see if query is in text
-        if(query in text):
-            is_in_file = True
-        #calcualte tf and idf
-        docs_with_word_count = len(wordMapping[query])
-        docs_count = len(docMapping)
-        for key, value in docMapping.items():
-            if(value == json_name):
-                docid = key
-        for docid, frequency in wordMapping[query]:
-            if(json_docid == docid):
-                word_frequency = frequency
-                break
-        
-        tf_idf = self.tfidf((word_frequency/len(text)),(docs_count/docs_with_word_count))
-        
+        with open(os.getcwd() + "/developer/DEV/" + json_name + "json") as f:
+            data = json.load(f)
 
-        return (is_in_file,tf_idf)
+            html_content = data['content']
+            soup = BeautifulSoup(html_content, 'html.parser')
+            text = soup.get_text()
+            #checks to see if query is in text
+            if(query in text):
+                is_in_file = True
+            else:
+                return (False, -1)
+            #calcualte tf and idf
+            docs_with_word_count = len(wordMapping[query])
+            docs_count = 808
+            
+            
+            # for key, value in docMapping.items():
+            #     if(value == json_name):
+            #         json_docid = key
+            # for docid, frequency in wordMapping[query]:
+            #     if(json_docid == docid):
+            #         word_frequency = frequency
+            #         break
+            
+            for k,v in wordMapping[query]:
+                if k == docID:
+                    word_frequency = v
+                    break
+            
+            print(docs_count,docs_with_word_count)
+            tf_idf = self.tfidf((word_frequency/len(tokenize(text))),(docs_count/(1+docs_with_word_count)))
+            
+
+        return (is_in_file,tf_idf) or (False, -1)
     
     def tfidf(self,tf,idf)->float:
-        return (1+math.log(tf))*math.log(idf)
+        return tf*math.log(idf)
     
     def pathToUrl(self,path) -> str:
         try:
