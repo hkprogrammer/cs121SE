@@ -4,7 +4,7 @@ from os.path import *
 from src.tokenizer import tokenize
 from tqdm import tqdm
 from src.extractText import extract_text_from_json_files
-
+import math
 
 class ProcessJson:
     def __init__(self):
@@ -14,10 +14,11 @@ class ProcessJson:
         self.doc_id = {}
         self.doc_id_num = 1
         self.doc_freqs = {}
-        self.saveThreshold = 3 # threshold in lecture slides
+        self.saveThreshold = 8000 # threshold in lecture slides
         self.counterFileName = 1
         self.savedTokens = 0
         self.savedDocs = 0
+        self.docLength = {}
         
 
 
@@ -30,14 +31,12 @@ class ProcessJson:
         print("===============Extract/Parsing File=================")
         print(f"===============LEG {self.counterFileName}=================")
         
-        counter = 0
+        counter = 1
         for json_hash in tqdm(glob(pathname=f'{self.save_dir}/**/*.json', recursive=True)):
             # print(json_hash)
 
-           
-           
             try:
-                if counter % self.saveThreshold:
+                if counter % self.saveThreshold == 0:
                     self.saveData()
 
                 text = extract_text_from_json_files(json_hash)
@@ -92,6 +91,7 @@ class ProcessJson:
                 else:
                     
                     docId = self.doc_id_num
+                    self.docLength[docId] = len(file_text)
                     self.doc_id[full_extention_name] = docId
                     self.doc_id_num +=1
                 # if docId in self.all_json_inverts[word]:
@@ -256,9 +256,21 @@ class ProcessJson:
             return
 
         # sort the global frequencies
+        allDocLength = len(self.all_json_inverts)
         for k,v in self.all_json_inverts.items():
+            
+            
+            
+            
+            for i in range(len(v)):
+                v[i] = list(v[i])    
+                v[i][1] = self.tfidf((v[i][1]/self.docLength[v[i][0]]),(allDocLength/(1+len(v))))
+                v[i] = tuple(v[i])
             v = sorted(v,key=lambda x:x[1],reverse=True)
             self.all_json_inverts[k] = v
+            
+            
+    
         sorted_items = sorted(self.all_json_inverts.items(), key=lambda x: len(x[1]), reverse=True)
 
         # write each word json_names to the file
@@ -293,7 +305,8 @@ class ProcessJson:
         f.close()
         
         
-        
+    def tfidf(self,tf,idf)->float:
+        return tf*math.log(idf)
         
             
 def record_json_freq_invert(custom_dir: str) -> None:

@@ -3,14 +3,16 @@ import json
 import os
 from bs4 import BeautifulSoup
 import math
+from tqdm import tqdm
 # from tokenizer to
 
 
 #complete this class for query
 class Query:
-    def __init__(self,query:str)->None:
+    def __init__(self,query:str,threshold:int)->None:
         self.query = query
-        self.threshold = 5
+        self.threshold = threshold
+        self.doc_count = 0
     
     
     def makeQuery(self)->list[tuple["url",int]]:
@@ -34,28 +36,39 @@ class Query:
         # filters through the doc only if the checkquery is true, else then skip that doc.
         docList = {}
         pureDocs = {}
-        for i in listOfDocID:      
+        print("===============1-gram Seaching=================")
+        
+        for i in tqdm(listOfDocID):      
+            
             for j in tokenize(self.query):
+                if j not in wordMapping:
+                    continue
                 result = self.checkQueryInFile(j,i,docMapping[i],wordMapping,docMapping)
                 if i in pureDocs and pureDocs[i] <= result[1]:
                     continue
                 if result[0] == True:
                     docList[docMapping[i]] = result[1]
                     pureDocs[i] = result[0]
-            else:
-                continue
+            
+            
+                
+            
         
         docList = list(docList.items())
+        docfound = len(docList)
+        docList = sorted(docList,key=lambda x:x[1],reverse=True)[:self.threshold]
         
         #go through each path and finds its corresponding url. If the function throws an error, then it will skip that particular url.
         urlList = [] 
-        for i in docList:
+        print("===============URLing=================")
+        
+        for i in tqdm(docList):
             tup = (self.pathToUrl(i[0]),i[1])       
             if tup[0] == "":
                 continue
             urlList.append(tup)
         
-        return urlList
+        return urlList,docfound
             
     
     
@@ -112,53 +125,55 @@ class Query:
         Returns:
             tuple[bool,int]: _description_
         """
-        is_in_file = False
+        is_in_file = True
         doc_count = 0
         doc_with_word_count = 0
         tf_idf = 0
         json_docid = 0
-        json_name = targetJson[:-4].split("\\")[-1]
+        
+        # json_name = targetJson[:-4].split("\\")[-1]
         word_frequency = 0
         # wordMapping,docMapping = self.readFile(self.query)
         #beautifulsoup to open json file
-        with open(os.getcwd() + "/developer/DEV/" + json_name + "json") as f:
-            data = json.load(f)
+        # with open(os.getcwd() + "\\developer\\DEV\\" + targetJson) as f:
+        #     data = json.load(f)
 
-            html_content = data['content']
-            soup = BeautifulSoup(html_content, 'html.parser')
-            text = soup.get_text()
-            # text = []
-            # for i in f:
-            #     text.extend(tokenize(i.rstrip("\n")))
+        #     html_content = data['content']
+        #     soup = BeautifulSoup(html_content, 'html.parser')
+        #     text = soup.get_text()
+        #     # text = []
+        #     # for i in f:
+        #     #     text.extend(tokenize(i.rstrip("\n")))
 
-            #checks to see if query is in text
-            if(query in text):
-                is_in_file = True
-            else:
-                return (False, -1)
-            #calcualte tf and idf
-            docs_with_word_count = len(wordMapping[query])
-            docs_count = 808
+        #     #checks to see if query is in text
+        #     if(query in text):
+        #         is_in_file = True
+        #     else:
+        #         return (False, -1)
+        #     #calcualte tf and idf
+        #     # docs_with_word_count = len(wordMapping[query])
+        #     # docs_count = self.doc_count
             
             
-            # for key, value in docMapping.items():
-            #     if(value == json_name):
-            #         json_docid = key
-            # for docid, frequency in wordMapping[query]:
-            #     if(json_docid == docid):
-            #         word_frequency = frequency
-            #         break
-            
-            for k,v in wordMapping[query]:
-                if k == docID:
-                    word_frequency = v
-                    break
+        #     # for key, value in docMapping.items():
+        #     #     if(value == json_name):
+        #     #         json_docid = key
+        #     # for docid, frequency in wordMapping[query]:
+        #     #     if(json_docid == docid):
+        #     #         word_frequency = frequency
+        #     #         break
             
             
-            tf_idf = self.tfidf((word_frequency/len(text)),(docs_count/(1+docs_with_word_count)))
             
-
-        return (is_in_file,tf_idf) or (False, -1)
+            
+        #     # tf_idf = self.tfidf((word_frequency/len(text)),(docs_count/(1+docs_with_word_count)))
+        
+        tfidf = 0
+        for k,v in wordMapping[query]:
+            if k == docID:
+                tfidf = v
+                break
+        return (is_in_file,tfidf) or (False, -1)
     
     def tfidf(self,tf,idf)->float:
         return tf*math.log(idf)
@@ -166,7 +181,7 @@ class Query:
     def pathToUrl(self,path) -> str:
         try:
             
-            with open(os.getcwd() + "/developer/DEV/" + path) as f:
+            with open(os.getcwd() + "\\developer\\DEV\\" + path) as f:
                 file = json.load(f)
                 
                 return file["url"]
@@ -191,7 +206,7 @@ class Query:
         d = {}
         neededIDs = set()
         queryWords = tokenize(query)
-        with open("developer/DEV/all_inverted_index.txt","r",encoding="utf-8") as f:
+        with open("developer\\DEV\\all_inverted_index.txt","r",encoding="utf-8") as f:
             for i in f:
                 line = i.rstrip("\n").split(" -> ")
                 word = line[0]
@@ -202,13 +217,13 @@ class Query:
                 for i in docIDs.split("),("):
                     numbers = i[1:] if i.startswith("(") else i[:-1] if i.endswith(")") else i 
                     tup = numbers.split(", ")
-                    docID,freq = int(tup[0]),int(tup[1])
+                    docID,freq = int(tup[0]),float(tup[1])
                     docs.append([docID,freq])
                     neededIDs.add(docID)
                 
                 d[word] = docs
         mappings = {}
-        with open("developer/DEV/id_map.txt","r",encoding="utf-8") as f:
+        with open("developer\\DEV\\id_map.txt","r",encoding="utf-8") as f:
             for i in f:
                 line = i.rstrip("\n").split(" -> ")
                 docID = int(line[0])
@@ -216,6 +231,13 @@ class Query:
                     continue
                 # url = line[1].replace("_",".")
                 mappings[docID] = line[1]
+        
+        
+        with open("developer\\DEV\\inverted_index_count.txt","r",encoding="utf-8") as f:
+            
+            for i in f:
+                self.doc_count = int(i.rstrip("\n"))
+                break
         
         return d,mappings
                 
