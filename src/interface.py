@@ -26,11 +26,11 @@ class Interface:
         return input("Enter phrase to query: ")
     
     def query(self,query):
-        quer = Query(query)
-        result = quer.makeQuery()
+        quer = Query(query,5)
+        result,docfound = quer.makeQuery()
 
         result = sorted(result,key=lambda x:x[1],reverse=True)        
         
         for i in result[:self.showingNumber]:
             print("Page: ", i[0], ", tf-idf:",i[1])
-        print(f"found on a total of {len(result)} pages, showing {min(self.showingNumber,len(result))}")
+        print(f"found on a total of {docfound} pages, showing {min(self.showingNumber,len(result))}")
