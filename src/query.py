@@ -86,7 +86,7 @@ class Query:
             return_list.append([split_words[x] for x in range(start_index, start_index + n)])
         return return_list
     
-    def recursiveCheck(self,booleanQuery:list[str],docIDs:dict["word": [int]]) -> list[int]:
+    def recursiveCheck(self,booleanQuery:list,docIDs:dict) -> list:
         """The recursiveCheck should take in the booleanQuery and compute the 1-gram, 2-gram, 3-gram and n-gram search and return a list of docIDs
 
         Args:
@@ -125,7 +125,7 @@ class Query:
             self.inner_lists.append(append_list)
             return self.recursiveCheck(booleanQuery[1:], docIDs)
     
-    def findIntersection(self,list1:list[int],list2:list[int]) -> list[int]:
+    def findIntersection(self,list1:list,list2:list) -> list:
         """finds the intersection between list1 and list2. Try to implement a more efficeint way than just using set.intersection()
         Perferably using pointers that locates at the front of both lists and can fast forward if needed. 
 
