@@ -10,7 +10,7 @@ from tqdm import tqdm
 class Query:
     def __init__(self,query:str,threshold:int)->None:
         self.query = query
-        self.threshold = 5
+        self.threshold = threshold
         self.doc_count = 0
         self.inner_lists = []
     
