@@ -4,7 +4,6 @@ import os
 from bs4 import BeautifulSoup
 import math
 from tqdm import tqdm
-# from tokenizer to
 
 
 #complete this class for query
@@ -13,7 +12,7 @@ class Query:
         self.query = query
         self.threshold = threshold
         self.doc_count = 0
-    
+        self.inner_lists = []
     
     def makeQuery(self)->list[tuple["url",int]]:
         """the makeQuery function makes a query using self.query and returns the search result along with it
@@ -67,26 +66,27 @@ class Query:
             if tup[0] == "":
                 continue
             urlList.append(tup)
-        
-        return urlList,docfound
-            
-    
-    
-    def stringToBooleans(self,query:str,gramcount:int) -> list[list]:
-        """stringToBoolean function takes in the string query splits it to a 2-gram finder.
+
+        return urlList
+
+    def stringToBooleans(self,query:str, n:int=2) -> list:
+        """stringToBoolean function takes in the string query splits it to a (n)-gram finder.
 
         Args:
-            query (str): _description_
+            query (str): input string to tokenize
+            n (int): number of words to include in each inner list
 
         Returns:
-            list[list]: _description_
+            list[list]: a list of lists each containing n words
         """
-        
-
-        #TODO
-        return [[]]
+        assert n > 0, "No point in splitting string into lists with 0 words"
+        split_words = tokenize(query)
+        return_list = []
+        for start_index in range(len(split_words) - n + 1):
+            return_list.append([split_words[x] for x in range(start_index, start_index + n)])
+        return return_list
     
-    def recursiveCheck(self,booleanQuery:list[str],docIDs:dict["word": [int]]) -> list[int]:
+    def recursiveCheck(self,booleanQuery:list,docIDs:dict) -> list:
         """The recursiveCheck should take in the booleanQuery and compute the 1-gram, 2-gram, 3-gram and n-gram search and return a list of docIDs
 
         Args:
@@ -97,11 +97,35 @@ class Query:
             list[int]: list of docIDs from search.
             
         """
-        
-        #TODO
-        return [] if len(docIDs) == 0 else list(docIDs.values())[0]
+        if len(booleanQuery) == 0:
+            returnList = []
+            if len(self.inner_lists) >= 1:
+                sortedBySize = sorted(self.inner_lists, key=lambda x: len(x))
+                returnList = sortedBySize[0]
+                sortedBySize = sortedBySize[1:]
+                while len(sortedBySize) > 0:
+                    if len(returnList) == 0:
+                        break
+                    returnList = self.findIntersection(returnList, sortedBySize[0])
+                    sortedBySize = sortedBySize[1:]
+            self.inner_lists = []
+            return returnList
+        else:
+            check_lists = [docIDs[curr_word] for curr_word in booleanQuery[0]]
+            sortedBySize = sorted(check_lists, key=lambda x: len(x))
+            append_list = []
+            if len(sortedBySize) >= 1:
+                append_list = sortedBySize[0]
+                sortedBySize = sortedBySize[1:]
+                while len(sortedBySize) > 0:
+                    if len(append_list) == 0:
+                        break
+                    append_list = self.findIntersection(append_list, sortedBySize[0])
+                    sortedBySize = sortedBySize[1:]
+            self.inner_lists.append(append_list)
+            return self.recursiveCheck(booleanQuery[1:], docIDs)
     
-    def findIntersection(self,list1:list[int],list2:list[int]) -> list[int]:
+    def findIntersection(self,list1:list,list2:list) -> list:
         """finds the intersection between list1 and list2. Try to implement a more efficeint way than just using set.intersection()
         Perferably using pointers that locates at the front of both lists and can fast forward if needed. 
 
@@ -112,8 +136,21 @@ class Query:
         Returns:
             list[int]: common list of docIDs
         """
-        #TODO
-        return [1]
+        sortedIDs1 = sorted(list1)
+        sortedIDs2 = sorted(list2)
+        commonIDs = []
+        while len(sortedIDs1) > 0 and len(sortedIDs2) > 0:
+            elem1 = sortedIDs1[0]
+            elem2 = sortedIDs2[0]
+            if elem1 < elem2:
+                sortedIDs1 = sortedIDs1[1:]
+            elif elem2 < elem1:
+                sortedIDs2 = sortedIDs2[1:]
+            else:
+                commonIDs.append(elem1)
+                sortedIDs1 = sortedIDs1[1:]
+                sortedIDs2 = sortedIDs2[1:]
+        return commonIDs
     
     def checkQueryInFile(self,query:str,docID:int,targetJson,wordMapping,docMapping) -> tuple[bool,float]:
         """check if a query exist inside a target JSON html. Return (True,tf-idf) score of the query in the targetJSON. If false return (False,-1)
