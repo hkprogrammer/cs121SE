@@ -22,52 +22,107 @@ class Query:
         """
         
         
-        wordMapping,docMapping = self.readFile(self.query) # wordMapping: {word: [[docID,freq],...]}, docMapping: {docID: url}
+        allWordMapping,wordMapping,docMapping = self.readFile(self.query) # wordMapping: {word: [[docID,freq],...]}, docMapping: {docID: url}
         pureDocIDs = dict() # pureDocIDs: {word: [docID,docID,docID,...]}
         for i in wordMapping:
             pureDocIDs[i] = [j[0] for j in wordMapping[i]]
 
 
-        queries = self.stringToBooleans(self.query,2)
-        listOfDocID = self.recursiveCheck(queries,pureDocIDs)
+        # queries = self.stringToBooleans(self.query,2)
+        # print(queries)
+        # listOfDocID = self.recursiveCheck(queries,pureDocIDs)
         
         
-        # filters through the doc only if the checkquery is true, else then skip that doc.
-        docList = {}
-        pureDocs = {}
-        print("===============1-gram Seaching=================")
         
-        for i in tqdm(listOfDocID):      
+        wordList = list(wordMapping.keys())
+        docsDict = {}
+        for i in tqdm(wordList):
+            for j in wordMapping[i]:
+                if j[0] not in docsDict:
+                    docsDict[j[0]] = [0 for _ in range(len(wordList))]  
+                docsDict[j[0]][wordList.index(i)] = j[1]       
+        
+        queryWords = [0 for _ in range(len(wordList))]
+        
+        
+        tfidfFlag = False
+        for i in tokenize(self.query):
+            if i not in wordList:
+                tfidfFlag = True
+                break
+            locator = wordList.index(i)
+            queryWords[locator] = self.tfidf((tokenize(self.query).count(i)/len(tokenize(self.query))), (2))
+        # queryWords = [self.tfidf((tokenize(self.query).count(i)/len(tokenize(self.query))), (2)) for i in tokenize(self.query)]
+        
+        if tfidfFlag or len(docsDict) == 0 or len(tokenize(self.query)) == 1 or len(queryWords) != len(list(docsDict.values())[0]):
+            tfidf_cosine = "tf-idf"
+            # use 1-gram search
+            if len(list(pureDocIDs.values())) == 0:
+                return [],0,""
+            listOfDocID = list(pureDocIDs.values())[0]
+
             
-            for j in tokenize(self.query):
-                if j not in wordMapping:
-                    continue
-                result = self.checkQueryInFile(j,i,docMapping[i],wordMapping,docMapping)
-                if i in pureDocs and pureDocs[i] <= result[1]:
-                    continue
-                if result[0] == True:
-                    docList[docMapping[i]] = result[1]
-                    pureDocs[i] = result[0]
             
             
+            
+            
+            # filters through the doc only if the checkquery is true, else then skip that doc.
+            docList = {}
+            pureDocs = {}
+            print("===============1-gram Seaching=================")
+            
+            for i in tqdm(listOfDocID):      
+                
+                for j in tokenize(self.query):
+                    if j not in wordMapping:
+                        continue
+                    result = self.checkQueryInFile(j,i,docMapping[i],wordMapping,docMapping)
+                    if i in pureDocs and pureDocs[i] <= result[1]:
+                        continue
+                    if result[0] == True:
+                        docList[docMapping[i]] = result[1]
+                        pureDocs[i] = result[0]
+                
+                
+                    
                 
             
+            docList = list(docList.items())
+            docfound = len(docList)
+            docList = sorted(docList,key=lambda x:x[1],reverse=True)[:self.threshold]
         
-        docList = list(docList.items())
-        docfound = len(docList)
-        docList = sorted(docList,key=lambda x:x[1],reverse=True)[:self.threshold]
+        else:
+            tfidf_cosine = "cosine"
+            #cosine similarity
+            
+            
+            for i in docsDict:
+                
+                cosSim = sum([queryWords[j] * docsDict[i][j] for j in range(len(queryWords))]) / (math.sqrt(sum([j**2 for j in docsDict[i]])) * math.sqrt(sum([j**2 for j in queryWords])) )
+                docsDict[i] = cosSim
+            
+            
+            docsDict = list(sorted(docsDict.items(),key=lambda x:x[1],reverse = True))
+            docfound = len(docsDict)
+            docList = [list(i) for i in docsDict]
+            for i in range(len(docList)):
+                docList[i][0] = docMapping[docList[i][0]]
         
         #go through each path and finds its corresponding url. If the function throws an error, then it will skip that particular url.
         urlList = [] 
         print("===============URLing=================")
         
+        counter = 0
         for i in tqdm(docList):
+            if counter > self.threshold:
+                break
             tup = (self.pathToUrl(i[0]),i[1])       
             if tup[0] == "":
                 continue
             urlList.append(tup)
+            counter+=1
 
-        return urlList
+        return urlList,docfound,tfidf_cosine
 
     def stringToBooleans(self,query:str, n:int=2) -> list:
         """stringToBoolean function takes in the string query splits it to a (n)-gram finder.
@@ -241,24 +296,27 @@ class Query:
         
         """
         d = {}
+        d_all = {}
         neededIDs = set()
         queryWords = tokenize(query)
+        
         with open("developer\\DEV\\all_inverted_index.txt","r",encoding="utf-8") as f:
             for i in f:
+                
                 line = i.rstrip("\n").split(" -> ")
                 word = line[0]
-                if word not in queryWords:
-                    continue
-                docIDs = line[1]
-                docs = []
-                for i in docIDs.split("),("):
-                    numbers = i[1:] if i.startswith("(") else i[:-1] if i.endswith(")") else i 
-                    tup = numbers.split(", ")
-                    docID,freq = int(tup[0]),float(tup[1])
-                    docs.append([docID,freq])
-                    neededIDs.add(docID)
-                
-                d[word] = docs
+                if word in queryWords:
+                    docIDs = line[1]
+                    docs = []
+                    for i in docIDs.split("),("):
+                        numbers = i[1:-1] if i.startswith("(") and i.endswith(")") else i[1:] if i.startswith("(") else i[:-1] if i.endswith(")") else i 
+                        tup = numbers.split(", ")
+                        docID,freq = int(tup[0]),float(tup[1])
+                        docs.append([docID,freq])
+                        neededIDs.add(docID)
+                    
+                    d[word] = docs
+                # d_all[word] = docs
         mappings = {}
         with open("developer\\DEV\\id_map.txt","r",encoding="utf-8") as f:
             for i in f:
@@ -276,7 +334,7 @@ class Query:
                 self.doc_count = int(i.rstrip("\n"))
                 break
         
-        return d,mappings
+        return d_all,d,mappings
                 
                 
     
