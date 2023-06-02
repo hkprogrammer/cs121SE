@@ -36,8 +36,6 @@ class Query:
         pureDocs = {}
         print("===============1-gram Seaching=================")
 
-        print(f"docId: {listOfDocID}")
-
         for i in tqdm(listOfDocID):      
             curr_url_line = linecache.getline(self.url_map_filename, i)
             curr_url = curr_url_line.rstrip("\n").split(" -> ")[1]
