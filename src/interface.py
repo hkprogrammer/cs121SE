@@ -27,7 +27,8 @@ class Interface:
     
     def query(self,query):
         quer = Query(query,5)
-        result,docfound = quer.makeQuery()
+        result = quer.makeQuery()
+        docfound = len(result)
 
         result = sorted(result,key=lambda x:x[1],reverse=True)        
         

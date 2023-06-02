@@ -1,18 +1,23 @@
+import linecache
 from src.tokenizer import tokenize
 import json
 import os
 from bs4 import BeautifulSoup
 import math
 from tqdm import tqdm
+from collections import defaultdict
 
 
 #complete this class for query
 class Query:
-    def __init__(self,query:str,threshold:int)->None:
+    def __init__(self,query:str,threshold:int=1)->None:
         self.query = query
+        self.split_query = tokenize(query)
+        self.query_len = len(self.split_query)
         self.threshold = threshold
         self.doc_count = 0
         self.inner_lists = []
+        self.url_map_filename = os.path.abspath("developer\\DEV\\id_map.txt")
     
     def makeQuery(self)->list[tuple["url",int]]:
         """the makeQuery function makes a query using self.query and returns the search result along with it
@@ -20,33 +25,30 @@ class Query:
         Returns:
             list of urls: a list containing the url and the tf-idf score of that word in that particular url.  
         """
-        
-        
-        wordMapping,docMapping = self.readFile(self.query) # wordMapping: {word: [[docID,freq],...]}, docMapping: {docID: url}
-        pureDocIDs = dict() # pureDocIDs: {word: [docID,docID,docID,...]}
-        for i in wordMapping:
-            pureDocIDs[i] = [j[0] for j in wordMapping[i]]
 
+        wordMapping, pureDocIDs = self.readFile() # wordMapping: {word: [[docID,freq],...]}, pureDocIDs: {word: [docID,docID,docID,...]}
 
-        queries = self.stringToBooleans(self.query,2)
+        queries = self.stringToBooleans(1)
         listOfDocID = self.recursiveCheck(queries,pureDocIDs)
-        
         
         # filters through the doc only if the checkquery is true, else then skip that doc.
         docList = {}
         pureDocs = {}
         print("===============1-gram Seaching=================")
-        
+
+        print(f"docId: {listOfDocID}")
+
         for i in tqdm(listOfDocID):      
-            
-            for j in tokenize(self.query):
+            curr_url_line = linecache.getline(self.url_map_filename, i)
+            curr_url = curr_url_line.rstrip("\n").split(" -> ")[1]
+            for j in self.split_query:
                 if j not in wordMapping:
                     continue
-                result = self.checkQueryInFile(j,i,docMapping[i],wordMapping,docMapping)
+                result = self.checkQueryInFile(j,i,curr_url,wordMapping)
                 if i in pureDocs and pureDocs[i] <= result[1]:
                     continue
                 if result[0] == True:
-                    docList[docMapping[i]] = result[1]
+                    docList[curr_url] = result[1]
                     pureDocs[i] = result[0]
             
             
@@ -69,21 +71,20 @@ class Query:
 
         return urlList
 
-    def stringToBooleans(self,query:str, n:int=2) -> list:
+    def stringToBooleans(self,n:int=1) -> list:
         """stringToBoolean function takes in the string query splits it to a (n)-gram finder.
 
         Args:
-            query (str): input string to tokenize
             n (int): number of words to include in each inner list
 
         Returns:
             list[list]: a list of lists each containing n words
         """
         assert n > 0, "No point in splitting string into lists with 0 words"
-        split_words = tokenize(query)
+        assert len(self.split_query) >= n, "Not enough words in query to split into this many lists"
         return_list = []
-        for start_index in range(len(split_words) - n + 1):
-            return_list.append([split_words[x] for x in range(start_index, start_index + n)])
+        for start_index in range(self.query_len - n + 1):
+            return_list.append([self.split_query[x] for x in range(start_index, start_index + n)])
         return return_list
     
     def recursiveCheck(self,booleanQuery:list,docIDs:dict) -> list:
@@ -97,6 +98,7 @@ class Query:
             list[int]: list of docIDs from search.
             
         """
+        # deal with empty boolean query
         if len(booleanQuery) == 0:
             returnList = []
             if len(self.inner_lists) >= 1:
@@ -110,6 +112,8 @@ class Query:
                     sortedBySize = sortedBySize[1:]
             self.inner_lists = []
             return returnList
+
+        # recursively shorten the length of boolean query
         else:
             check_lists = [docIDs[curr_word] for curr_word in booleanQuery[0]]
             sortedBySize = sorted(check_lists, key=lambda x: len(x))
@@ -152,7 +156,7 @@ class Query:
                 sortedIDs2 = sortedIDs2[1:]
         return commonIDs
     
-    def checkQueryInFile(self,query:str,docID:int,targetJson,wordMapping,docMapping) -> tuple[bool,float]:
+    def checkQueryInFile(self,query:str,docID:int,targetJson,wordMapping) -> tuple[bool,float]:
         """check if a query exist inside a target JSON html. Return (True,tf-idf) score of the query in the targetJSON. If false return (False,-1)
 
         Args:
@@ -218,7 +222,7 @@ class Query:
     def pathToUrl(self,path) -> str:
         try:
             
-            with open(os.getcwd() + "\\developer\\DEV\\" + path) as f:
+            with open(os.path.abspath("\\developer\\DEV\\" + path)) as f:
                 file = json.load(f)
                 
                 return file["url"]
@@ -226,28 +230,22 @@ class Query:
             print(ex)
             return ""
 
-    def readFile(self,query:str)-> dict:
+    def readFile(self) -> (dict, dict):
         """
         reads through inverted index and id_map and returns a tuple of two elements
-            -> mapping of {word: [[docID,freq],...]}
-            -> mapping of {docID: jsonFile}
+            -> mapping of {word: [[docID,freq],...], ...}
+            -> mapping of {word: [docID,docID,docID,...], ...}
         
         This function also filters through the inverted index and only return back mapping that the word is part of the search.
         Like let's say if searching "UC Irvine" then this will only return the tokens and its docID if the words are "UC" or "Irvine"
-        
-        input: 
-            - query (str): the query sentence/word. 
-
-        
         """
         d = {}
-        neededIDs = set()
-        queryWords = tokenize(query)
-        with open("developer\\DEV\\all_inverted_index.txt","r",encoding="utf-8") as f:
+        pureDocIDs = defaultdict(list)
+        with open(os.path.abspath("developer\\DEV\\all_inverted_index.txt"),"r",encoding="utf-8") as f:
             for i in f:
                 line = i.rstrip("\n").split(" -> ")
                 word = line[0]
-                if word not in queryWords:
+                if word not in self.split_query:
                     continue
                 docIDs = line[1]
                 docs = []
@@ -256,27 +254,16 @@ class Query:
                     tup = numbers.split(", ")
                     docID,freq = int(tup[0]),float(tup[1])
                     docs.append([docID,freq])
-                    neededIDs.add(docID)
+                    pureDocIDs[word].append(docID)
                 
                 d[word] = docs
-        mappings = {}
-        with open("developer\\DEV\\id_map.txt","r",encoding="utf-8") as f:
-            for i in f:
-                line = i.rstrip("\n").split(" -> ")
-                docID = int(line[0])
-                if docID not in neededIDs:
-                    continue
-                # url = line[1].replace("_",".")
-                mappings[docID] = line[1]
         
-        
-        with open("developer\\DEV\\inverted_index_count.txt","r",encoding="utf-8") as f:
-            
+        with open(os.path.abspath("developer\\DEV\\inverted_index_count.txt"),"r",encoding="utf-8") as f:
             for i in f:
                 self.doc_count = int(i.rstrip("\n"))
                 break
         
-        return d,mappings
+        return d, pureDocIDs
                 
                 
     
