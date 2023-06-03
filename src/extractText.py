@@ -3,6 +3,7 @@ import json
 from bs4 import BeautifulSoup
 from unicodedata import normalize
 from tqdm import tqdm
+from pathlib import Path
 
 #https://stackoverflow.com/questions/33263669/how-to-remove-nonascii-characters-in-python
 
@@ -19,7 +20,7 @@ def extract_text_from_json_files(filename):
     # print("===============Extracting Texts=================")
     # for json_path in tqdm(file_list):
     try:
-        with open(filename) as f:
+        with open(Path(filename)) as f:
             data = json.load(f)
         html_content = data['content']
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -28,7 +29,8 @@ def extract_text_from_json_files(filename):
         # print(output_filename)
         normalize('NFKD', text).encode('ASCII', 'ignore')
         # output_filename = html_url[8:-1] + '.txt'
-        return text
+        url = data["url"]
+        return text,url
     except Exception as e:
         print("Exception happened during extract: ",e )
     return ""
