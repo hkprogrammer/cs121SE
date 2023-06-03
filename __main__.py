@@ -1,7 +1,8 @@
 
-from src.interface import Interface
+from src.GUI import GUI
 
     
 if __name__ == "__main__":
-    UI = Interface()
-    UI.runProgram()
+    print("Running on GUI mode, will take around 5 seconds to setup, please wait.")
+    g = GUI()
+    g.start()

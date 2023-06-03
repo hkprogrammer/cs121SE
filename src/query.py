@@ -4,17 +4,29 @@ import os
 from bs4 import BeautifulSoup
 import math
 from tqdm import tqdm
+from time import time
+from collections import defaultdict
+from pathlib import Path
 
 
 #complete this class for query
 class Query:
-    def __init__(self,query:str,threshold:int)->None:
-        self.query = query
-        self.threshold = threshold
+    def __init__(self)->None:
+        
+        # self.threshold = 5
         self.doc_count = 0
         self.inner_lists = []
+
+        # s = time()
+        # self.allWordMapping,self.wordMapping,self.docMapping = self.readFile() # wordMapping: {word: [[docID,freq],...]}, docMapping: {docID: url}
+        # v = time()
+        # print(v-s)
+        
+        self.loadWordList = self.readWordList()
+        
+        
     
-    def makeQuery(self)->list[tuple["url",int]]:
+    def makeQuery(self,query,threshold=5)->list[tuple["url",int]]:
         """the makeQuery function makes a query using self.query and returns the search result along with it
 
         Returns:
@@ -22,18 +34,31 @@ class Query:
         """
         
         
-        allWordMapping,wordMapping,docMapping = self.readFile(self.query) # wordMapping: {word: [[docID,freq],...]}, docMapping: {docID: url}
+        
+        
+        #initialize 
+        self.query = query
+        self.tokenizedQuery = tokenize(self.query)
+        self.tokenLen = len(self.tokenizedQuery)
+        self.threshold = threshold
+        
+        
+        self.wordMapping, self.docMapping = self.readFile(self.tokenizedQuery)
+        
+        wordMapping,docMapping = self.wordMapping,self.docMapping
+        
+        
+        
+    
+        #create just the docIDs needed
         pureDocIDs = dict() # pureDocIDs: {word: [docID,docID,docID,...]}
         for i in wordMapping:
             pureDocIDs[i] = [j[0] for j in wordMapping[i]]
 
 
-        # queries = self.stringToBooleans(self.query,2)
-        # print(queries)
-        # listOfDocID = self.recursiveCheck(queries,pureDocIDs)
+
         
-        
-        
+        #create docsDict like a 2-d list but in a dictionary format.
         wordList = list(wordMapping.keys())
         docsDict = {}
         for i in tqdm(wordList):
@@ -45,35 +70,48 @@ class Query:
         queryWords = [0 for _ in range(len(wordList))]
         
         
+        
+        
+        # if any word is not in corpus, then use tf-idf to calculate. Or else the cosine similarity method might cause error
         tfidfFlag = False
-        for i in tokenize(self.query):
+        for i in self.tokenizedQuery:
             if i not in wordList:
                 tfidfFlag = True
                 break
             locator = wordList.index(i)
-            queryWords[locator] = self.tfidf((tokenize(self.query).count(i)/len(tokenize(self.query))), (2))
+            queryWords[locator] = self.tfidf((self.tokenizedQuery.count(i)/self.tokenLen), (2))
         # queryWords = [self.tfidf((tokenize(self.query).count(i)/len(tokenize(self.query))), (2)) for i in tokenize(self.query)]
         
-        if tfidfFlag or len(docsDict) == 0 or len(tokenize(self.query)) == 1 or len(queryWords) != len(list(docsDict.values())[0]):
+        
+        
+        if tfidfFlag or len(docsDict) == 0 or self.tokenLen == 1 or len(queryWords) != len(list(docsDict.values())[0]):
             tfidf_cosine = "tf-idf"
             # use 1-gram search
+            
+            
+            # listOfDocID get just the IDS.
+            
+
             if len(list(pureDocIDs.values())) == 0:
+                # if there are no docs matching with any word (meaning that the entire query does not exist in corpus), return empty.
                 return [],0,""
             listOfDocID = list(pureDocIDs.values())[0]
 
-            
-            
-            
-            
-            
             # filters through the doc only if the checkquery is true, else then skip that doc.
             docList = {}
             pureDocs = {}
-            print("===============1-gram Seaching=================")
             
+           
+            
+            print("===============1-gram Seaching=================")
+            c = 0
             for i in tqdm(listOfDocID):      
                 
-                for j in tokenize(self.query):
+                if c == self.threshold:
+                    break
+                
+                # this iterate through to see the highest tf-idf value for each word given the docs. 
+                for j in self.tokenizedQuery:
                     if j not in wordMapping:
                         continue
                     result = self.checkQueryInFile(j,i,docMapping[i],wordMapping,docMapping)
@@ -82,45 +120,79 @@ class Query:
                     if result[0] == True:
                         docList[docMapping[i]] = result[1]
                         pureDocs[i] = result[0]
-                
+                c+=1
+
+            
+            
                 
                     
                 
             
+            #conversion
             docList = list(docList.items())
-            docfound = len(docList)
+            docfound = len(listOfDocID)
             docList = sorted(docList,key=lambda x:x[1],reverse=True)[:self.threshold]
+        
+        
         
         else:
             tfidf_cosine = "cosine"
             #cosine similarity
+            print("===============Cosine Similarity Seaching=================")
+            
             
             
             for i in docsDict:
                 
+                
+                # cosine similairty computation for vector i against self.query
                 cosSim = sum([queryWords[j] * docsDict[i][j] for j in range(len(queryWords))]) / (math.sqrt(sum([j**2 for j in docsDict[i]])) * math.sqrt(sum([j**2 for j in queryWords])) )
                 docsDict[i] = cosSim
             
             
+            
+            
+            # convert docsDict to URL list
             docsDict = list(sorted(docsDict.items(),key=lambda x:x[1],reverse = True))
             docfound = len(docsDict)
             docList = [list(i) for i in docsDict]
             for i in range(len(docList)):
                 docList[i][0] = docMapping[docList[i][0]]
         
-        #go through each path and finds its corresponding url. If the function throws an error, then it will skip that particular url.
-        urlList = [] 
-        print("===============URLing=================")
         
-        counter = 0
-        for i in tqdm(docList):
-            if counter > self.threshold:
-                break
-            tup = (self.pathToUrl(i[0]),i[1])       
-            if tup[0] == "":
-                continue
-            urlList.append(tup)
-            counter+=1
+        
+        
+        # this is an implmentation of exact search, though it decreases the runtime by around 100ms, so we left the code here and decide not to do.
+        # try:
+        
+        #     # twoGramBool = self.stringToBooleans(self.tokenizedQuery,self.tokenLen)
+        #     # twoGramResult = self.recursiveCheck(twoGramBool,pureDocIDs)
+            
+        #     if self.tokenLen > 5:
+        #         print("===============Exact Seaching=================")
+
+        #         currentIntersection = set(pureDocIDs[self.tokenizedQuery[0]])
+        #         for i in self.tokenizedQuery[1:]:
+        #             currentIntersection = currentIntersection.intersection(set(pureDocIDs[i]))
+                    
+        #         # print(currentIntersection)
+        #         if len(currentIntersection) > 0:
+        #             exactList = []
+        #             for i in currentIntersection:
+        #                 exactList.append([docMapping[i],1,"Exact"])
+
+        #             docList = exactList + docList
+
+                              
+        # except Exception as ex:
+        #     print("cannot do exact search: ", ex)
+        
+        
+        
+    
+        urlList = docList
+        
+   
 
         return urlList,docfound,tfidf_cosine
 
@@ -135,7 +207,7 @@ class Query:
             list[list]: a list of lists each containing n words
         """
         assert n > 0, "No point in splitting string into lists with 0 words"
-        split_words = tokenize(query)
+        split_words = query # give nthat query is the tokenized list
         return_list = []
         for start_index in range(len(split_words) - n + 1):
             return_list.append([split_words[x] for x in range(start_index, start_index + n)])
@@ -218,70 +290,33 @@ class Query:
             tuple[bool,int]: _description_
         """
         is_in_file = True
-        doc_count = 0
-        doc_with_word_count = 0
-        tf_idf = 0
-        json_docid = 0
-        
-        # json_name = targetJson[:-4].split("\\")[-1]
-        word_frequency = 0
-        # wordMapping,docMapping = self.readFile(self.query)
-        #beautifulsoup to open json file
-        # with open(os.getcwd() + "\\developer\\DEV\\" + targetJson) as f:
-        #     data = json.load(f)
-
-        #     html_content = data['content']
-        #     soup = BeautifulSoup(html_content, 'html.parser')
-        #     text = soup.get_text()
-        #     # text = []
-        #     # for i in f:
-        #     #     text.extend(tokenize(i.rstrip("\n")))
-
-        #     #checks to see if query is in text
-        #     if(query in text):
-        #         is_in_file = True
-        #     else:
-        #         return (False, -1)
-        #     #calcualte tf and idf
-        #     # docs_with_word_count = len(wordMapping[query])
-        #     # docs_count = self.doc_count
-            
-            
-        #     # for key, value in docMapping.items():
-        #     #     if(value == json_name):
-        #     #         json_docid = key
-        #     # for docid, frequency in wordMapping[query]:
-        #     #     if(json_docid == docid):
-        #     #         word_frequency = frequency
-        #     #         break
-            
-            
-            
-            
-        #     # tf_idf = self.tfidf((word_frequency/len(text)),(docs_count/(1+docs_with_word_count)))
         
         tfidf = 0
         for k,v in wordMapping[query]:
             if k == docID:
                 tfidf = v
                 break
-        return (is_in_file,tfidf) or (False, -1)
+        else:
+            is_in_file = False
+        
+        return (is_in_file,tfidf)
     
     def tfidf(self,tf,idf)->float:
         return tf*math.log(idf)
     
-    def pathToUrl(self,path) -> str:
-        try:
+    def pathToUrl(self,url) -> str:
+        # try:
             
-            with open(os.getcwd() + "\\developer\\DEV\\" + path) as f:
-                file = json.load(f)
+        #     with open(os.getcwd() + "\\developer\\DEV\\" + path) as f:
+        #         file = json.load(f)
                 
-                return file["url"]
-        except Exception as ex:
-            print(ex)
-            return ""
+        #         return file["url"]
+        # except Exception as ex:
+        #     print(ex)
+        #     return ""
+        return url # we modified the code such that the item stored in the mapping for docID is url instead of path to increase the speed
 
-    def readFile(self,query:str)-> dict:
+    def readFile(self,query:list)-> dict:
         """
         reads through inverted index and id_map and returns a tuple of two elements
             -> mapping of {word: [[docID,freq],...]}
@@ -295,30 +330,53 @@ class Query:
 
         
         """
-        d = {}
-        d_all = {}
-        neededIDs = set()
-        queryWords = tokenize(query)
         
-        with open("developer\\DEV\\all_inverted_index.txt","r",encoding="utf-8") as f:
-            for i in f:
+        # find the docs to read by reading the master doc.
+        docsToRead = []
+        for i in query:
+            if i in self.loadWordList:
+                docsToRead.append(self.loadWordList[i])
                 
-                line = i.rstrip("\n").split(" -> ")
-                word = line[0]
-                if word in queryWords:
-                    docIDs = line[1]
+        
+        
+        # open each individual index file on disk.    
+        d = {}
+        neededIDs = set()
+        for i in tqdm(docsToRead):
+            with open(Path(f"developer/DEV/word_index_holder/file{i}.txt"),"r",encoding="utf-8") as file:
+                # return file.readlines()[0].strip()
+                line = file.readlines()[0].strip()
+                line = line.split(" -> ")
+                
+                if line[0] not in d:
+                    
                     docs = []
-                    for i in docIDs.split("),("):
-                        numbers = i[1:-1] if i.startswith("(") and i.endswith(")") else i[1:] if i.startswith("(") else i[:-1] if i.endswith(")") else i 
+                    if "),(" in line[1]:
+                        
+                        
+                        #parsing if more than 1 posting
+                        for i in line[1].split("),("):
+                            numbers = i[1:-1] if i.startswith("(") and i.endswith(")") else i[1:] if i.startswith("(") else i[:-1] if i.endswith(")") else i 
+                            tup = numbers.split(", ")
+                            docID,freq = int(tup[0]),float(tup[1])
+                            docs.append([docID,freq])
+                            neededIDs.add(docID)
+                    else:
+                        #parsing if only 1 posting
+                        numbers = line[1][1:-1]
                         tup = numbers.split(", ")
                         docID,freq = int(tup[0]),float(tup[1])
                         docs.append([docID,freq])
                         neededIDs.add(docID)
+                        
+                        
                     
-                    d[word] = docs
-                # d_all[word] = docs
+                    d[line[0]] = docs
+        
+        
+        # read the mappings.
         mappings = {}
-        with open("developer\\DEV\\id_map.txt","r",encoding="utf-8") as f:
+        with open(Path("developer/DEV/id_map.txt"),"r",encoding="utf-8") as f:
             for i in f:
                 line = i.rstrip("\n").split(" -> ")
                 docID = int(line[0])
@@ -328,15 +386,29 @@ class Query:
                 mappings[docID] = line[1]
         
         
-        with open("developer\\DEV\\inverted_index_count.txt","r",encoding="utf-8") as f:
+        with open(Path("developer/DEV/inverted_index_count.txt"),"r",encoding="utf-8") as f:
             
             for i in f:
                 self.doc_count = int(i.rstrip("\n"))
                 break
         
-        return d_all,d,mappings
+        return d,mappings
+    
+    
+    def readWordList(self):
+        
+        
+        wordlists = {}
+        with open(Path("developer/DEV/word_index.txt"),"r",encoding="utf-8") as f:
+            for i in tqdm(f):
+                line = i.strip().split(" -> ")
                 
-                
+                if line[0] in wordlists:
+                    print("This should not happen")
+                    continue
+                if len(line) > 0:
+                    wordlists[line[0]] = int(line[1])
+        return wordlists
     
 if __name__ == "__main__":
     Query("Test Query")

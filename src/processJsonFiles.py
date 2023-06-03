@@ -5,6 +5,7 @@ from src.tokenizer import tokenize
 from tqdm import tqdm
 from src.extractText import extract_text_from_json_files
 import math
+from pathlib import Path
 
 class ProcessJson:
     def __init__(self):
@@ -39,14 +40,15 @@ class ProcessJson:
                 if counter % self.saveThreshold == 0:
                     self.saveData()
 
-                text = extract_text_from_json_files(json_hash)
+                text,url = extract_text_from_json_files(json_hash)
                 if text == "":
                     continue
                 self.process_file_words(text,json_hash)
-                self.invert_index(text,json_hash)
+                self.invert_index(text,json_hash,url)
                 counter += 1
                 
             except Exception as ex:
+                
                 print("exception hapepened during parsing: ", ex)
                 print("file: ",json_hash)
         return counter
@@ -78,7 +80,7 @@ class ProcessJson:
         
         
         
-    def invert_index(self, file_text:str,json_name):
+    def invert_index(self, file_text:str,json_name,url:str):
         
         
         
@@ -86,13 +88,13 @@ class ProcessJson:
         for word in tokenized_words:
             if(json_name not in self.all_json_inverts[word]):
                 full_extention_name = json_name[json_name.index("DEV")+4:]
-                if full_extention_name in self.doc_id:
-                    docId = self.doc_id[full_extention_name]
+                if url in self.doc_id:
+                    docId = self.doc_id[url]
                 else:
                     
                     docId = self.doc_id_num
                     self.docLength[docId] = len(file_text)
-                    self.doc_id[full_extention_name] = docId
+                    self.doc_id[url] = docId
                     self.doc_id_num +=1
                 # if docId in self.all_json_inverts[word]:
                 #     continue
@@ -109,7 +111,7 @@ class ProcessJson:
         
         try:
             
-            write_obj = open(f"{self.save_dir}/{self.counterFileName}_inverted_index.txt", "w",encoding="utf-8")
+            write_obj = open(Path(f"{self.save_dir}/{self.counterFileName}_inverted_index.txt"), "w",encoding="utf-8")
         except OSError:
             print("Error opening current file: {self.counterFileName}_inverted_index.txt")
             return
@@ -141,7 +143,7 @@ class ProcessJson:
     def process_all_freqs(self) -> None:
         # open a file for writing the global frequencies
         try:
-            write_obj = open(f"{self.save_dir}/all_file_freqs.txt", "w",encoding="utf-8")
+            write_obj = open(Path(f"{self.save_dir}/all_file_freqs.txt"), "w",encoding="utf-8")
         except OSError:
             print("Error opening current file: all_file_freqs.txt")
             return
@@ -170,7 +172,7 @@ class ProcessJson:
         
         #reverse DocIDs:
         
-        f = open(f"{self.save_dir}/{self.counterFileName}_id_map.txt","w",encoding="utf-8")
+        f = open(Path(f"{self.save_dir}/{self.counterFileName}_id_map.txt"),"w",encoding="utf-8")
         appearedID = set()
         # print(self.doc_id)
         print(f"===============Writing {self.counterFileName} DocID Map File=================")
@@ -185,14 +187,14 @@ class ProcessJson:
     
     def writeNumDocs(self):
         print(f"===============Writing final Inverted Index Count File=================")
-        f = open(f"{self.save_dir}/inverted_index_count.txt","w",encoding="utf-8")
+        f = open(Path(f"{self.save_dir}/inverted_index_count.txt"),"w",encoding="utf-8")
         f.write(str(len(self.all_json_inverts)))
         f.close()
             
     def saveData(self):
         
         
-        print(f"\n\n\n{len(self.all_json_inverts)} numer of words have been parsed. {len(self.doc_id)} docs has been parsed.")
+        print(f"\n\n\n{len(self.all_json_inverts)} number of words have been parsed. {len(self.doc_id)} docs has been parsed.")
         print(f"Saved {self.savedTokens} non-duplicative tokens so far. Saved {self.savedDocs} so far")
         print(f"===============LEG {self.counterFileName}=================")
         self.savedTokens += len(self.all_json_inverts)
@@ -217,7 +219,7 @@ class ProcessJson:
         for fileNum in tqdm(range(1,self.counterFileName+1)):
             #merge inverted index of all files
             
-            with open(f"{self.save_dir}/{fileNum}_inverted_index.txt","r",encoding="utf-8") as f:
+            with open(Path(f"{self.save_dir}/{fileNum}_inverted_index.txt"),"r",encoding="utf-8") as f:
                 for i in f:
                     line = i.rstrip("\n").split(" -> ")
                     word = line[0]
@@ -237,7 +239,7 @@ class ProcessJson:
                     else:
                         self.all_json_inverts[word] = docs
                         
-            with open(f"{self.save_dir}/{fileNum}_id_map.txt","r",encoding="utf-8") as f:
+            with open(Path(f"{self.save_dir}/{fileNum}_id_map.txt"),"r",encoding="utf-8") as f:
                 for i in f:
                     line = i.rstrip("\n").split(" -> ")
                     docID = int(line[0])
@@ -250,7 +252,7 @@ class ProcessJson:
     def writeFinal(self):
         try:
             
-            write_obj = open(f"{self.save_dir}/all_inverted_index.txt", "w",encoding="utf-8")
+            write_obj = open(Path(f"{self.save_dir}/all_inverted_index.txt"), "w",encoding="utf-8")
         except OSError:
             print("Error opening current file: all_inverted_index.txt")
             return
@@ -258,10 +260,7 @@ class ProcessJson:
         # sort the global frequencies
         allDocLength = len(self.all_json_inverts)
         for k,v in self.all_json_inverts.items():
-            
-            
-            
-            
+
             for i in range(len(v)):
                 v[i] = list(v[i])    
                 v[i][1] = self.tfidf((v[i][1]/self.docLength[v[i][0]]),(allDocLength/(1+len(v))))
@@ -291,7 +290,7 @@ class ProcessJson:
         # close the file for writing
         write_obj.close()
         
-        f = open(f"{self.save_dir}/id_map.txt","w",encoding="utf-8")
+        f = open(Path(f"{self.save_dir}/id_map.txt"),"w",encoding="utf-8")
         appearedID = set()
         # print(self.doc_id)
         print("===============Writing Final DocID Map File=================")
